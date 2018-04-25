@@ -21,6 +21,11 @@ h1 {
 h1 span {
     font-size: 14px;
 }
+h1 .logout {
+    float: right;
+    font-size: 14px;
+    color: #409EFF;
+}
 .log pre {
     line-height: 1.5;
     font-size: 14px;

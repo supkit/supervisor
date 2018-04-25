@@ -1,3 +1,7 @@
+<?php
+session_start();
+unset($_SESSION['user']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

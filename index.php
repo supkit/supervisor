@@ -20,7 +20,7 @@ if (!isset($_SESSION['user'])) {
 <body>
     <div id="app" class="index">
         <div class="container">
-            <h1>Supervisor <span>{{info.supervisorVerison}}</span></h1>
+            <h1>Supervisor <span>{{info.supervisorVerison}}</span><a class="logout" href="login.php">退出</a></h1>
 
             <el-table :data="allProcess" border style="width: 100%">
                 <el-table-column prop="statename" label="状态" width="120">
