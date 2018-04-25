@@ -40,9 +40,9 @@ $path = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
                 </el-table-column>
                 <el-table-column prop="statename" label="操作">
                     <template slot-scope="scope">
-                        <el-button v-if="scope.row.statename === 'RUNNING'" size="small" @click="restart(scope.row.name)">重启</el-button>
+                        <el-button v-if="scope.row.statename === 'RUNNING'" size="small" @click="restartProcess(scope.row.name)">重启</el-button>
                         <el-button v-if="scope.row.statename === 'STOPPED'" size="small" @click="startProcess(scope.row.name)">启动</el-button>
-                        <el-button v-if="scope.row.statename === 'RUNNING'" size="small" @click="stop(scope.row.name)">停止</el-button>
+                        <el-button v-if="scope.row.statename === 'RUNNING'" size="small" @click="stopProcess(scope.row.name)">停止</el-button>
                         <el-button size="small" @click="readProcessStdoutLog(scope.row.name)">查看日志</el-button>
                         <el-button size="small" @click="clearProcessLogs(scope.row.name)">清除日志</el-button>
                     </template>
@@ -145,7 +145,7 @@ $path = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
                     this.api('restartProcess', 'post', {
                         name: name
                     }, function () {
-                        
+
                     }, '重启成功')
                 },
                 stopProcess: function (name) {

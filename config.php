@@ -5,7 +5,9 @@ return [
     'port' => 9001,
     'username' => 'user',
     'password' => '123',
-    'login' => [
+
+    // 登录账号
+    'auth' => [
         'username' => 'super',
         'password' => 'super123'
     ]

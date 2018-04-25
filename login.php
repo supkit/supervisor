@@ -1,6 +1,8 @@
 <?php
 session_start();
 unset($_SESSION['user']);
+
+$path = str_replace('login.php', '', $_SERVER['SCRIPT_NAME']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -99,7 +101,7 @@ unset($_SESSION['user']);
             },
             methods: {
                 api: function (method) {
-                    return '/develop/supervisor/api.php?method=' + method;
+                    return '<?php echo $path; ?>api.php?method=' + method;
                 },
                 submit: function (formName) {
                     this.$refs[formName].validate((valid) => {

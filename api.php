@@ -156,7 +156,7 @@ class Api
         $username = $input['account'];
         $password = $input['password'];
 
-        if ($username === $this->config['username'] && $password === $this->config['password']) {
+        if ($username === $this->config['auth']['username'] && $password === $this->config['auth']['password']) {
             session_start();
             $_SESSION['user'] = $username;
             return true;
