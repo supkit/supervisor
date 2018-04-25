@@ -6,6 +6,8 @@ if (!isset($_SESSION['user'])) {
     header('Location: login.php');
 }
 
+$path = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -39,17 +41,13 @@ if (!isset($_SESSION['user'])) {
                 <el-table-column prop="statename" label="操作">
                     <template slot-scope="scope">
                         <el-button v-if="scope.row.statename === 'RUNNING'" size="small" @click="restart(scope.row.name)">重启</el-button>
-                        <el-button v-if="scope.row.statename === 'STOPPED'" size="small" @click="start(scope.row.name)">启动</el-button>
+                        <el-button v-if="scope.row.statename === 'STOPPED'" size="small" @click="startProcess(scope.row.name)">启动</el-button>
                         <el-button v-if="scope.row.statename === 'RUNNING'" size="small" @click="stop(scope.row.name)">停止</el-button>
-                        <el-button size="small" @click="readLog(scope.row.name)">查看日志</el-button>
-                        <el-button size="small" @click="clearLog(scope.row.name)">清除日志</el-button>
+                        <el-button size="small" @click="readProcessStdoutLog(scope.row.name)">查看日志</el-button>
+                        <el-button size="small" @click="clearProcessLogs(scope.row.name)">清除日志</el-button>
                     </template>
                 </el-table-column>
             </el-table>
-
-            <el-dialog title="查看日志" :visible.sync="dialogReadLogVisible" width="60%">
-                <pre>{{log}}</pre>
-            </el-dialog>
         </div>
     </div>
     <script src="assets/vue.min.js"></script>
@@ -60,7 +58,6 @@ if (!isset($_SESSION['user'])) {
         el: '#app',
             data: function() {
                 return {
-                    dialogReadLogVisible: false,
                     log: '',
                     info: {},
                     allProcess: []
@@ -70,18 +67,53 @@ if (!isset($_SESSION['user'])) {
                 var that = this;
 
                 // 读取所有的进程
-                axios.get('/develop/supervisor/api.php?method=getAllProcessInfo').then(function (response) {
-                    that.allProcess = response.data.data;
+                this.api('getAllProcessInfo', 'get', [], function (response) {
+                    that.allProcess = response.data;
                 });
 
-                axios.get('/develop/supervisor/api.php?method=index').then(function (response) {
-                    console.log(response);
-                    that.info = response.data.data;
+                // 读取supervisor信息
+                this.api('index', 'get', [], function (response) {
+                    that.info = response.data;
                 });
             },
             methods: {
-                api: function (method) {
-                    return '/develop/supervisor/api.php?method=' + method;
+                /**
+                 * 拼接API
+                 * @param string api
+                 * @param string method
+                 * @param object params
+                 * @param callback success
+                 * @param string message
+                 */
+                api: function (api, method, params = {}, success, message) {
+                    var that = this;
+                    var url = '<?php echo $path ?>api.php?method=' + api;
+                    var result = {};
+
+                    axios({
+                        method: 'post',
+                        url: url,
+                        data: method === 'post' || method === 'put' ? params : null,
+                        params: method === 'get' || method === 'delete' ? params : null,
+                    }).then(function (response) {
+                        if (response.data.code !== 0) {
+                            that.$message({
+                                type: 'error',
+                                message: response.data.message
+                            });
+                            return false;
+                        }
+                        if (message) {
+                            that.$message({
+                                type: 'success',
+                                message: message
+                            });
+                        }
+
+                        if (success) {
+                            success(response.data)
+                        }
+                    });
                 },
                 timestampToTime: function (timestamp) {
                     var date = new Date(timestamp * 1000)
@@ -95,120 +127,41 @@ if (!isset($_SESSION['user'])) {
                 reset: function () {
                     var that = this;
                     // 读取所有的进程
-                    axios.get('/develop/supervisor/api.php?method=getAllProcessInfo').then(function (response) {
+                    this.api('getAllProcessInfo', 'get', {}, function (response) {
                         that.allProcess = response.data.data;
                     });
                 },
-                start: function (name) {
+                startProcess: function (name) {
                     var that = this;
-                    axios.post(this.api('start'), {
+                    this.api('startProcess', 'post', {
                         name: name
-                    }).then(function (response) {
-                        if (response.data.code !== 0) {
-                            that.$message({
-                                type: 'error',
-                                message: response.data.message
-                            });
-
-                            return false;
-                        }
-                        that.$message({
-                            type: 'success',
-                            message: '重启成功'
-                        });
-
-                        // 重置
-                        that.reset();
-                    });
-                },
-                restart: function (name) {
-                    var that = this;
-                    axios.post(this.api('restart'), {
-                        name: name
-                    }).then(function (response) {
-                        if (response.data.code !== 0) {
-                            that.$message({
-                                type: 'error',
-                                message: response.data.message
-                            });
-
-                            return false;
-                        }
-                        that.$message({
-                            type: 'success',
-                            message: '重启成功'
-                        });
-
-                        // 重置
-                        that.reset();
-                    });
-                },
-                stop: function (name) {
-                    var that = this;
-                    axios.post(this.api('stop'), {
-                        name: name
-                    }).then(function (response) {
-                        if (response.data.code !== 0) {
-                            that.$message({
-                                type: 'error',
-                                message: response.data.message
-                            });
-
-                            return false;
-                        }
-                        that.$message({
-                            type: 'success',
-                            message: '进程已停止'
-                        });
-
-                        // 重置
-                        that.reset();
-                    });
-
-                    // 读取所有的进程
-                    axios.get('/develop/supervisor/api.php?method=getAllProcessInfo').then(function (response) {
+                    }, function (response) {
                         console.log(response);
-                        that.allProcess = response.data.data;
-                    });
+                        that.reset();
+                    }, '启动成功');
                 },
-                readLog: function (name) {
-                    location.href = 'log.php?name='+name;
-                    return true;
+                restartProcess: function (name) {
                     var that = this;
-                    axios.post(this.api('readProcessStdoutLog'), {
+                    this.api('restartProcess', 'post', {
                         name: name
-                    }).then(function (response) {
-                        if (response.data.code !== 0) {
-                            that.$message({
-                                type: 'error',
-                                message: response.data.message
-                            });
-
-                            return false;
-                        }
-
-                        that.log = response.data.data;
-                        that.dialogReadLogVisible = true;
-                    });
+                    }, function () {
+                        
+                    }, '重启成功')
                 },
-                clearLog: function (name) {
-                    var that = this;
-                    axios.post(this.api('clearProcessLogs'), {
+                stopProcess: function (name) {
+                    this.api('stopProcess', 'post', {
                         name: name
-                    }).then(function (response) {
-                        if (response.data.code !== 0) {
-                            that.$message({
-                                type: 'error',
-                                message: response.data.message
-                            });
-
-                            return false;
-                        }
-                        that.$message({
-                            type: 'success',
-                            message: '日志已经清空'
-                        });
-                    });
+                    }, function (response) {
+                        this.reset();
+                    }, '进程已停止');
+                },
+                readProcessStdoutLog: function (name) {
+                    location.href = 'log.php?name=' + name;
+                },
+                clearProcessLogs: function (name) {
+                    this.api('clearProcessLogs', 'post', {
+                        name: name
+                    }, function () {}, '日志已经清空');
                 }
             }
         })

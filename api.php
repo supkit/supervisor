@@ -66,7 +66,7 @@ class Api
      * 
      * @return bool
      */
-    public function start()
+    public function startProcess()
     {
         $this->auth();
         $input = Helper::input();
@@ -81,7 +81,7 @@ class Api
      * 
      * @return bool
      */
-    public function restart()
+    public function restartProcess()
     {
         $this->auth();
         $input = Helper::input();
@@ -97,7 +97,7 @@ class Api
      * 
      * @return bool
      */
-    public function stop()
+    public function stopProcess()
     {
         $this->auth();
         $input = Helper::input();

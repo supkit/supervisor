@@ -39,7 +39,7 @@ class Helper
      * 
      * @return array
      */
-    private function input()
+    public function input()
     {
         return $input = json_decode(file_get_contents('php://input'), true);
     }
