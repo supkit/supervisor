@@ -1,19 +1,32 @@
 <?php
 
 include 'lib/Rpc.php';
+include 'lib/Helper.php';
 
 class Api
 {
+    /**
+     * RPC实例
+     * @var Rpc
+     */
     private $rpc = null;
 
+    /**
+     * 配置信息
+     * @var array
+     */
     private $config = [];
 
+    /**
+     * RPC url format
+     */
     const RPC_SERVER_URL = 'http://%s:%s/RPC2';
 
+    /**
+     * 构造方法
+     */
     public function __construct()
     {
-        
-
         $this->config = include 'config.php';
         $url = vsprintf(self::RPC_SERVER_URL, [$this->config['host'], $this->config['port']]);
         $username = $this->config['username'];
@@ -21,8 +34,11 @@ class Api
         $this->rpc = new Rpc($url, $username, $password);
     }
 
-    
-
+    /**
+     * 返回基本的Supervisor信息
+     * 
+     * @return array
+     */
     public function index()
     {
         $this->auth();
@@ -34,26 +50,41 @@ class Api
         return $data;
     }
 
+    /**
+     * 获取所有的进程信息
+     * 
+     * @return array
+     */
     public function getAllProcessInfo()
     {
         $this->auth();
         return $this->rpc->getAllProcessInfo();
     }
 
+    /**
+     * 启动进程
+     * 
+     * @return bool
+     */
     public function start()
     {
         $this->auth();
-        $input = $this->input();
+        $input = Helper::input();
         $name = $input['name'];
 
         $result = $this->rpc->startProcess($name);
         return $result;
     }
 
+    /**
+     * 重启进程
+     * 
+     * @return bool
+     */
     public function restart()
     {
         $this->auth();
-        $input = $this->input();
+        $input = Helper::input();
         $name = $input['name'];
 
         $this->rpc->stopProcess($name);
@@ -61,20 +92,30 @@ class Api
         return $result;
     }
 
+    /**
+     * 停止进程
+     * 
+     * @return bool
+     */
     public function stop()
     {
         $this->auth();
-        $input = $this->input();
+        $input = Helper::input();
         $name = $input['name'];
 
         $result = $this->rpc->stopProcess($name);
         return $result;
     }
 
+    /**
+     * 清除进程下的日志
+     * 
+     * @return bool
+     */
     public function clearProcessLogs()
     {
         $this->auth();
-        $input = $this->input();
+        $input = Helper::input();
         $name = $input['name'];
 
         $result = $this->rpc->clearProcessLogs($name);
@@ -82,10 +123,15 @@ class Api
         return $result;
     }
 
+    /**
+     * 读取标准输出日志
+     * 
+     * @return array
+     */
     public function readProcessStdoutLog()
     {
         $this->auth();
-        $input = $this->input();
+        $input = Helper::input();
         $name = $input['name'];
         $length = $input['length'];
         $start = $input['start'];
@@ -98,9 +144,15 @@ class Api
         return $result;
     }
 
+    /**
+     * 登录接口
+     * 
+     * @return bool
+     * @throws Exception
+     */
     public function login()
     {
-        $input = $this->input();
+        $input = Helper::input();
         $username = $input['account'];
         $password = $input['password'];
 
@@ -113,11 +165,12 @@ class Api
         throw new Exception('账号信息错误', 6);
     }
 
-    private function input()
-    {
-        return $input = json_decode(file_get_contents('php://input'), true);
-    }
-
+    /**
+     * 限制访问权限
+     * 
+     * @return bool
+     * @throws Exception
+     */
     private function auth()
     {
         session_start();
@@ -125,36 +178,18 @@ class Api
         if (empty($_SESSION['user'])) {
             throw new Exception('未登录，无访问权限', 78);
         }
-    }
 
-    public function success($data)
-    {
-        return [
-            'code' => 0,
-            'message' => 'ok',
-            'timestamp' => time(),
-            'data' => $data
-        ];
-    }
-
-    public function error($code = 500, $message)
-    {
-        return [
-            'code' => $code,
-            'message' => $message,
-            'timestamp' => time()
-        ];
+        return true;
     }
 }
 
-$api = new Api();
-
 try {
+    $api = new Api();
     $method = isset($_GET['method']) ? $_GET['method'] : 'index';
-    $response = $api->success($api->$method());
+    $response = Helper::success($api->$method());
 } catch (Exception $exception) {
-    $response = $api->error($exception->getCode(), $exception->getMessage());
+    $response = Helper::error($exception->getCode(), $exception->getMessage());
 }
 
 header('Content-Type: application/json');
-echo json_encode($response);
+exit(json_encode($response));
